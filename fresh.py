@@ -2,7 +2,6 @@ import praw
 import re
 import sys
 import os
-import json
 import webbrowser
 import textwrap
 import spotipy
@@ -14,71 +13,32 @@ from models import User
 import cutie
 import git
 
-class InvalidConfigFile(Exception):
-    """The configuration file is missing a certain section or key"""
+class FreshScriptBaseException(Exception):
+    """Base exception for this module."""
 
-def createUserConfig(user, config_path='.config.ini'):
-    """
-    Create .config.ini file for Spotify credentials.
+class ConfigFileError(FreshScriptBaseException):
+    """Base exception for configuration file errors."""
 
-    Parameters
-    ----------
-    user: User object
-        Spotify user object.
+class ConfigMissingKey(ConfigFileError):
+    """The configuration file is missing a certain section or key."""
 
-    config_path: str
-        Path to .config.ini.
+class ConfigInvalidExtension(ConfigFileError):
+    """The configuration file does not have the expected extension."""
 
-    """
-    s_config = ConfigParser()
-    s_config['spotify'] = {
-        'client_id': user.client_id,
-        'client_secret': user.client_secret,
-        'username': user.username,
-        'playlist_id': user.getPlaylistsAsString(),
-        'redirect_uri': user.redirect
-    }
+class ConfigReadError(ConfigFileError):
+    """Failed to read the requested config file."""
 
-    with open(config_path, 'w') as f:
-        s_config.write(f)
+class ConfigWriteError(ConfigFileError):
+    """Faled to write the requested config file."""
 
-def createPrawConfig(client_id, client_secret,
-                     praw_path='praw.ini'):
-    """
-    Create praw.ini file for Reddit credentials.
 
-    Parameters
-    ----------
-    client_id: str
-        Reddit app client id.
-    client_secret: str
-        Reddit app client secret.
-    praw_path: str
-        Path to praw.ini.
-    """
-    r_config = ConfigParser()
-    r_config['bot1'] = {
-        'client_id': client_id,
-        'client_secret': client_secret,
-        'user_agent': 'FreshScript'
-    }
-
-    with open(praw_path, 'w') as p:
-        r_config.write(p)
-
-def createUserAgentString(config_file='credentials.json'):
+def createUserAgentString(reddit_username):
     """
     Create a user-agent string which follows reddit API rules.
 
     Parameters
     ----------
-    config_file: str
-        File from which to read user's reddit username.
-
-    Raises
-    ------
-    InvalidConfigFile:
-        if config_file is missing a certain section or key
+    reddit_username: str
     """
     platform = "Python3"
     app = "FreshScript"
@@ -93,14 +53,6 @@ def createUserAgentString(config_file='credentials.json'):
     hexsha = repo.head.object.hexsha[:7] if repo else "UNKNOWN"
     # TODO: adopt semantic versioning (https://semver.org)
 
-    # Fetch reddit username from file
-    with open(config_file, 'r') as f:
-        config = json.load(f)
-    try:
-        reddit_username = config['reddit']['username']
-    except KeyError as e:
-        raise InvalidConfigFile(f"{config_file!r}") from e
-
     user_agent = ' '.join([
         f"{platform}:{app}:(commit {hexsha})",
         f"(by /u/{reddit_username})",
@@ -108,75 +60,135 @@ def createUserAgentString(config_file='credentials.json'):
     ])
     return user_agent
 
-def createUser():
-    user = None
-    # read config file
+
+def createUserFromPrompt(output_file='config.ini'):
+    """
+    Prompt the user to input their credentials, store the credentials
+    in the default configuration file, then build a models.User instance
+    from the config file.
+
+    Parameters
+    ----------
+        output_file: str
+            file in which to save credentials
+
+    Raises
+    ------
+    ConfigWriteError
+        if an error occurs while writing the config file
+    """
+    credential_store = ConfigParser()
+    credential_store['spotify'] = dict()
+    credential_store['reddit'] = dict()
+
+    # Request and store Spotify credentials
+    spotify = credential_store['spotify']
+    print('Enter your Spotify credentials:')
+    spotify['username'] = input('    Username: ').strip()
+    spotify['client_id'] = input('    Client ID: ').strip()
+    spotify['client_secret'] = input('    Client secret: ').strip()
+    spotify['redirect_uri'] = input('    Redirect URI: ').strip()
+
+    # Request and store reddit credentials
+    reddit = credential_store['reddit']
+    print('Enter your reddit credentials:')
+    reddit['username'] = input('    Username: ').strip()
+    reddit['client_id'] = input('    Client ID: ').strip()
+    reddit['client_secret'] = input('    Client secret: ').strip()
+
+    # Save credentials to output_file
     try:
-        if os.path.exists('credentials.json') and not os.path.isfile('.config.ini'):
-            # load credentials file
-            with open('credentials.json', 'r') as f:
-                credentials = json.load(f)
+        with open(output_file, 'w') as f:
+            credential_store.write(f)
+    except OSError as e:
+        raise ConfigWriteError(f"unable to write to {output_file}") from e
 
-            s_credentials = credentials['spotify']
-            p_credentials = credentials['reddit']
+    return createUserFromFile(output_file)
 
-            user = User(s_credentials['username'],
-                        s_credentials['client_id'],
-                        s_credentials['client_secret'],
-                        s_credentials['redirect'],
-                        []
-            )
 
-            user.addPlaylists()
+def createUserFromFile(config_file='config.ini'):
+    """
+    Create a models.User instance by reading attributes from
+    the specified config file.
 
-            # write config files
-            createUserConfig(user)
+    Parameters
+    ----------
+    config_file: str
+        .ini file which contains Spotify and reddit credentials
 
-            createPrawConfig(p_credentials['client_id'],
-                             p_credentials['client_secret'])
+    Returns
+    -------
+    user: models.User or None
 
-        elif not os.path.isfile('.config.ini'):
-            print('Credentials file not found!')
+    Raises
+    ------
+    ConfigFileError
+        if an error occurs while reading from config_file
+    """
+    user = None
 
-            # get credentials
-            s_client_id = input('Enter your Spotify Client ID: ').strip()
-            s_client_secret = input(
-                'Enter your Spotify Client Secret: ').strip()
-            username = input('Enter your Username: ').strip()
-            redirect = input('Enter your Redirect URI: ').strip()
-            r_client_id = input('Enter your Reddit Client ID: ').strip()
-            r_client_secret = input(
-                'Enter your Reddit Client Secret: ').strip()
-            user = User(username, s_client_id, s_client_secret, redirect, [])
-            user.addPlaylists()
+    # Check config file extension
+    _, extension = config_file.split('.')
+    if extension.lower() != 'ini':
+        msg = f"Expected .ini filetype, but got .{extension}"
+        raise ConfigInvalidExtension(msg)
+    
+    # Read the config file
+    parser = ConfigParser()
+    try:
+        with open(config_file, 'r') as f:
+            parser.read_file(f)
+    except OSError as e:
+        raise ConfigReadError(f"unable to read {config_file}") from e
 
-            # write config files
-            createUserConfig(user)
-            createPrawConfig(r_client_id, r_client_secret)
+    # Build the user
+    try:
+        spotify = parser['spotify']
+        user = User(username=spotify['username'],
+                    client_id=spotify['client_id'],
+                    client_secret=spotify['client_secret'],
+                    redirect=spotify['redirect_uri'],
+                    playlists=[])
+    except KeyError as e:
+        raise ConfigMissingKey(f"{config_file} is missing a key") from e
 
-        else:
-            # parse config
-            parser = ConfigParser()
-            parser.read('.config.ini')
-
-            # spotify info
-            username = parser.get('spotify', 'username')
-            playlists = parser.get('spotify', 'playlist_id').split(',')
-            s_client_id = parser.get('spotify', 'client_id')
-            s_client_secret = parser.get('spotify', 'client_secret')
-            redirect = parser.get('spotify', 'redirect_uri')
-            user = User(username, s_client_id,
-                        s_client_secret, redirect, playlists)
-
-            '''
-            TODO
-            config['youtube'] = {}
-            config['soundcloud'] = {}
-            '''
-    except Exception as e:
-        print(f'config failure: {e}')
-
+    user.addPlaylists()
     return user
+
+
+def createRedditInstance(config_file='config.ini'):
+    """
+    Create a praw.Reddit instance from the given configuration file.
+
+    Parameters
+    ----------
+    config_file: str
+        configuration file from which to read reddit credentials
+
+    Raises
+    ------
+    ConfigFileError
+        if error occurs while reading from the config file
+    """
+    parser = ConfigParser()
+    try:
+        with open(config_file, 'r') as f:
+            parser.read_file(f)
+    except OSError as e:
+        raise ConfigReadError(f"unable to read {config_file}") from e
+
+    try:
+        reddit = parser['reddit']
+        username = reddit['username']
+        client_id = reddit['client_id']
+        client_secret = reddit['client_secret']
+    except KeyError as e:
+        raise ConfigMissingKey(f"{config_file} is missing a key") from e
+
+    user_agent = createUserAgentString(username)
+    return praw.Reddit(client_id=client_id,
+                       client_secret=client_secret,
+                       user_agent=user_agent)
 
 
 def filter_tags(title):
@@ -303,11 +315,12 @@ def manage_playlists(user):
     user.printPlaylists()
     playlistStr = user.getPlaylistsAsString()
 
-    config = ConfigParser()
-    config.read('.config.ini')
-    config['spotify']['playlist_id'] = playlistStr
-    with open('.config.ini', 'w') as f:
-        config.write(f)
+    # TODO: Handle saving of playlist to config.ini
+    # config = ConfigParser()
+    # config.read('.config.ini')
+    # config['spotify']['playlist_id'] = playlistStr
+    # with open('.config.ini', 'w') as f:
+    #    config.write(f)
 
 
 def process_args(args, u):
@@ -398,7 +411,11 @@ def addSpotifyTrack(fresh, threshold, includeAlbums, verbose, sub, tracks):
 
 
 def main():
-    user = createUser()
+    config_file = 'config.ini'
+    if os.path.isfile(config_file):
+        user = createUserFromFile(config_file)
+    else:
+        user = createUserFromPrompt(output_file=config_file)
 
     argparser = argparse.ArgumentParser(
         formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=40))
@@ -419,9 +436,8 @@ def main():
 
     args = argparser.parse_args()
 
-    # connect to reddit bot
-    user_agent = createUserAgentString()
-    reddit = praw.Reddit('bot1', user_agent=user_agent)
+    # Connect to reddit API
+    reddit = createRedditInstance(config_file)
     subreddit = reddit.subreddit('hiphopheads')
 
     # create spotipy obj
