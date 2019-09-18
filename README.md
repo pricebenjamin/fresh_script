@@ -5,13 +5,11 @@ This program will search for spotify tracks posted in the HipHopHeads subreddit 
 ## New features!
 [Flask](http://flask.pocoo.org/) has recently been added to the project. You can read up on how to get it setup [here](flask.md).
 
-## Getting started
-
-### Prerequisites
+## Prerequisites
 
 This project uses Python 3.
 
-#### Spotify
+### Create a Spotify app
 You will need to setup a [Spotify developer account][spotify-dev-login] and create a new app from the [dashboard][spotify-app-dashboard].
 
 Fill out the form by giving your app a name (e.g., `fresh_script`) and short description (e.g., "creates Spotify playlist from songs posted on reddit").
@@ -32,7 +30,7 @@ Take note of the following information; it will be used to configure `fresh_scri
 [spotify-dev-login]: https://developer.spotify.com/dashboard/login
 [spotify-app-dashboard]: https://developer.spotify.com/dashboard/applications
 
-#### reddit
+### Create a reddit app
 You will need to create a reddit account, if you don't already have one. Then, [create a new app][reddit-app-dashboard].
 
 Your app only needs a name (e.g., `fresh_script`) and a redirect URI (e.g., `http://localhost/`); the rest of the fields are optional.
@@ -44,7 +42,7 @@ As before, take note of the following:
 
 [reddit-app-dashboard]: https://www.reddit.com/prefs/apps/
 
-#### Setup your credentials
+### Setup your credentials
 
 To set up your credentials, create a new file called `credentials.json` in the root of the project with the following contents:
 
@@ -66,7 +64,7 @@ To set up your credentials, create a new file called `credentials.json` in the r
  
 Replace the square-bracketed text with the information gathered in the previous steps.
 
-### Installing dependencies
+## Installing dependencies
 This project uses a dependency manager called [pipenv](https://pipenv.readthedocs.io). Follow the instructions to install it [here](https://pipenv.readthedocs.io/en/latest/install/#installing-pipenv).
 
 The project dependencies are listed in a [Pipfile](https://github.com/pypa/pipfile). Using pipenv, you can install all the dependencies with the following commands:
@@ -85,7 +83,7 @@ If you wish to deactivate the environment use the command
 exit
 ```
 
-### Running the script
+## Running the script
 
 Running the program is simple. The first time you run it, if you did not create `credentials.json`, you will be prompted to enter your Spotify / reddit credientials. Choose to sort results by hot or new, enter a post limit, and enjoy!
 
@@ -93,7 +91,7 @@ Running the program is simple. The first time you run it, if you did not create 
 python3 fresh.py
 ```
 
-### Script arguments
+## Script arguments
 
 The following arguments can be passed to the script
 
@@ -107,7 +105,7 @@ The following arguments can be passed to the script
 | -v    | --verbose        | bool   | Output songs being added and other info |
 | -p    | --playlists      | bool   | List, add, or remove playlists to add songs to |
 
-### Running the script using cron
+## Running the script using cron
 
 We can use cron to automatically run the script periodically in order to keep it up-to-date. You will need either macOS or Linux to use cron.
 
