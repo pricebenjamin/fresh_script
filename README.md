@@ -33,7 +33,7 @@ Take note of the following information; it will be used to configure `fresh_scri
 ### Create a reddit app
 You will need to create a reddit account, if you don't already have one. Then, [create a new app][reddit-app-dashboard].
 
-Your app only needs a name (e.g., `fresh_script`) and a redirect URI (e.g., `http://localhost/`); the rest of the fields are optional.
+Specify the name of your app (e.g., `fresh_script`), select that the app is a "Script", and specify a redirect URI (e.g., `http://localhost/`); the rest of the fields are optional.
 
 As before, take note of the following:
  * client ID (this is underneath the name of your app and looks something like `as19j8A1pr4WuU`)
