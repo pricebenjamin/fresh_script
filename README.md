@@ -2,26 +2,47 @@
 
 This program will search for spotify tracks posted in the HipHopHeads subreddit and add them to a playlist of your choice. HipHopHeads is a subreddit dedicated to everything hiphop, including the latest mixtapes, videos, news, and anything else hip hop related from your favorite artists.
 
-## New Features!
+## New features!
 [Flask](http://flask.pocoo.org/) has recently been added to the project. You can read up on how to get it setup [here](flask.md).
 
-## Getting Started
+## Prerequisites
 
-### Prerequisites
+This project uses Python 3.
 
-This project uses Python3.
+### Create a Spotify app
+You will need to setup a [Spotify developer account][spotify-dev-login] and create a new app from the [dashboard][spotify-app-dashboard].
 
-You will need to setup a Spotify developer account and register your app and obtain the following information:
-* client id
+Fill out the form by giving your app a name (e.g., `fresh_script`) and short description (e.g., "creates Spotify playlist from songs posted on reddit").
+Feel free to check "I don't know" when the form asks "What are you building?".
+Accept the Terms of Service, and you'll be brought to your new application's analytics page.
+
+The last thing you must do is specify a redirect URI for your application.
+This is done by clicking "Edit Settings", and adding a URI to the "Redirect URIs" list.
+(If you don't know what this setting is for, don't panic--just add the following: `http://localhost/`)
+
+Take note of the following information; it will be used to configure `fresh_script`:
+* client ID
 * client secret
+* redirect URI
 * your spotify username
-* playlist id of the playlist you want to add the tracks to
-* the url you want to redirect to for authentication, i.e. http://google.com/
-  * this must be added under your app settings > Redirect URIs 
+* playlist ID of the playlist you want to add the tracks to
 
-You will also need to setup a reddit instance with praw. [Here's](https://pythonforengineers.com/build-a-reddit-bot-part-1/) a useful guide I used to do this.
+[spotify-dev-login]: https://developer.spotify.com/dashboard/login
+[spotify-app-dashboard]: https://developer.spotify.com/dashboard/applications
 
-### Setup your Credentials
+### Create a reddit app
+You will need to create a reddit account, if you don't already have one. Then, [create a new app][reddit-app-dashboard].
+
+Your app only needs a name (e.g., `fresh_script`) and a redirect URI (e.g., `http://localhost/`); the rest of the fields are optional.
+
+As before, take note of the following:
+ * client ID (this is underneath the name of your app and looks something like `as19j8A1pr4WuU`)
+ * client secret (if not visible, click "edit" under the app you just made)
+ * your reddit username
+
+[reddit-app-dashboard]: https://www.reddit.com/prefs/apps/
+
+### Setup your credentials
 
 To set up your credentials, create a new file called `config.ini` in the root of the project with the following contents:
 
@@ -39,8 +60,8 @@ client_secret = u3g52lc-f_D4ZDbdM6NTCrrdY6h
 ```
 
 This `config.ini` was generated randomly, but follows the expected syntax exactly. Replace the provided values with your own. (See previous prerequisites.)
- 
-### Installing dependencies
+
+## Installing dependencies
 This project uses a dependency manager called [pipenv](https://pipenv.readthedocs.io). Follow the instructions to install it [here](https://pipenv.readthedocs.io/en/latest/install/#installing-pipenv).
 
 The project dependencies are listed in a [Pipfile](https://github.com/pypa/pipfile). Using pipenv, you can install all the dependencies with the following commands:
@@ -59,15 +80,15 @@ If you wish to deactivate the environment use the command
 exit
 ```
 
-### Running the script
+## Running the script
 
-Running the program is simple. The first time you run it, you will be asked for your Spotify credientials which will be saved to a config file for ease of use in the future. Choose to sort results by hot or new, enter a post limit, and then enjoy.
+Running the program is simple. The first time you run it, if you did not create `config.ini`, you will be prompted to enter your Spotify / reddit credientials. Choose to sort results by hot or new, enter a post limit, and enjoy!
 
 ```
 python3 fresh.py
 ```
 
-### Script arguments
+## Script arguments
 
 The following arguments can be passed to the script
 
@@ -81,9 +102,9 @@ The following arguments can be passed to the script
 | -v    | --verbose        | bool   | Output songs being added and other info |
 | -p    | --playlists      | bool   | List, add, or remove playlists to add songs to |
 
-### Running the script using cron
+## Running the script using cron
 
-We can use cron to automatically run the script periodically in order to keep it up-to-date. You will need either a macOS computer or Linux server to use cron.
+We can use cron to automatically run the script periodically in order to keep it up-to-date. You will need either macOS or Linux to use cron.
 
 1. Follow the `running the script` instructions to make sure your `.config.ini` file is generated with the required parameters
 2. Run `crontab -e` to open the cron editor, which is similar to vim
