@@ -23,23 +23,22 @@ You will also need to setup a reddit instance with praw. [Here's](https://python
 
 ### Setup your Credentials
 
-To set up your credentials, create a new file called `credentials.json` in the root of the project with the following contents:
+To set up your credentials, create a new file called `config.ini` in the root of the project with the following contents:
 
+```ini
+[spotify]
+username = spotify_user_wmssQrngkgsc
+client_id = ade3ecab1aa7a451e1c2825fae251182
+client_secret = 3c6016853f62767ab434b4dc520d1f43
+redirect_uri = http://localhost/
+
+[reddit]
+user = reddit_user_yxjdODGwvpun
+client_id = as19j8A1pr4WuU
+client_secret = u3g52lc-f_D4ZDbdM6NTCrrdY6h
 ```
-{
-    "spotify": {
-        "username": "[Spotify username]",
-        "client_id": "[Spotify client id]",
-        "client_secret": "[Spotify client secret]",
-        "redirect": "[redirect uri]"
-    },
-    "reddit": {
-        "username": "[reddit username]",
-        "client_id": "[praw client id]",
-        "client_secret": "[praw client secret]"
-    }
-}
-```
+
+This `config.ini` was generated randomly, but follows the expected syntax exactly. Replace the provided values with your own. (See previous prerequisites.)
  
 ### Installing dependencies
 This project uses a dependency manager called [pipenv](https://pipenv.readthedocs.io). Follow the instructions to install it [here](https://pipenv.readthedocs.io/en/latest/install/#installing-pipenv).
